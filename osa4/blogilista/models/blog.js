@@ -14,7 +14,7 @@ const blogSchema = new mongoose.Schema({
   },
   likes: {
     type: Number,
-    default: 0,  // Oletusarvo 0, jos arvoa ei anneta
+    default: 0,  
   },
 });
   

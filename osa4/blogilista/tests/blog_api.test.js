@@ -10,8 +10,8 @@ describe("/api/blogs GET tests with MongoDB", () => {
     const response = await api.get("/api/blogs");
     response.body.forEach((blog) => {
       console.log(
-        `Blog ID: ${blog.id}, Title: ${blog.title}, Author: ${blog.author}`
-      ); // Log blog details
+        `Blog ID: ${blog._id}, Title: ${blog.title}, Author: ${blog.author}` //MUISTA MONGODB OMA ID
+      ); 
     });
     expect(response.body).toBeInstanceOf(Array);
   });
@@ -26,7 +26,7 @@ describe("/api/blogs GET tests with MongoDB", () => {
     response.body.forEach((blog) => {
       console.log(
         `Blog ID: ${blog._id}, Title: ${blog.title}, Author: ${blog.author} URL: ${blog.url} Likes: ${blog.likes}`
-      ); // Log blog details
+      ); // MUISTA MONGODB OMA ID
     });
     expect(response.body).toHaveLength(blogsInDb.length);
   });
@@ -35,11 +35,11 @@ describe("/api/blogs GET tests with MongoDB", () => {
     const response = await api.get("/api/blogs").expect(200);
 
     response.body.forEach((blog) => {
-      blog.id = blog._id.toString(); // Convert MongoDB's _id field to id
+      blog.id = blog._id.toString(); 
       console.log(
-        `Blog ID: ${blog.id}, Title: ${blog.title}, Author: ${blog.author}`
-      ); // Log blog details
-      expect(blog.id).toBeDefined();
+        `Blog ID: ${blog._id}, Title: ${blog.title}, Author: ${blog.author}`
+      ); 
+      expect(blog._id).toBeDefined();
     });
   });
 
@@ -51,28 +51,28 @@ describe("/api/blogs GET tests with MongoDB", () => {
       likes: 0,
     };
 
-    // Talletetaan alkuperäisten blogien määrä ennen POST-pyyntöä
+    
     const blogsAtStart = await Blog.find({});
     const initialLength = blogsAtStart.length;
 
-    // Lähetetään POST-pyyntö lisättävästä blogista
+    
     const response = await api
       .post("/api/blogs")
       .send(newBlog)
-      .expect(201) // Odotetaan, että saamme HTTP 201 vastauksen (luonti)
-      .expect("Content-Type", /application\/json/); // Varmistetaan, että vastaus on JSON-muodossa
+      .expect(201) 
+      .expect("Content-Type", /application\/json/); 
 
-    // Tarkistetaan, että blogin tiedot ovat oikein
+    
     expect(response.body.title).toBe(newBlog.title);
     expect(response.body.author).toBe(newBlog.author);
     expect(response.body.url).toBe(newBlog.url);
     expect(response.body.likes).toBe(newBlog.likes);
 
-    // Haetaan blogit tietokannasta ja tarkistetaan, että uusi blogi on lisätty
+    
     const blogsInDb = await Blog.find({});
-    expect(blogsInDb).toHaveLength(initialLength + 1); // Varmistetaan, että blogien määrä on kasvanut yhdellä
+    expect(blogsInDb).toHaveLength(initialLength + 1); 
 
-    // Tarkistetaan, että lisätty blogi löytyy tietokannasta
+    
     const titles = blogsInDb.map((blog) => blog.title);
     expect(titles).toContain(newBlog.title); // Varmistetaan, että lisätty blogi löytyy tietokannasta
   });
@@ -84,14 +84,14 @@ describe("/api/blogs GET tests with MongoDB", () => {
       url: "http://www.testblog.com",
     };
   
-    // Lähetetään POST-pyyntö ilman likes kenttää
+    
     const response = await api
       .post("/api/blogs")
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
   
-    // Varmistetaan, että likes kenttä on 0, vaikka sitä ei annettu
+    
     expect(response.body.likes).toBe(0);
   });
 
@@ -105,10 +105,10 @@ describe("/api/blogs GET tests with MongoDB", () => {
     const response = await api
       .post("/api/blogs")
       .send(newBlog)
-      .expect(400) // Varmistetaan, että statuskoodi on 400
+      .expect(400) 
       .expect("Content-Type", /application\/json/);
   
-    // Varmistetaan, että virheilmoitus sisältää odotetut tiedot
+    
     expect(response.body.error).toBe("title is required");
   });
   
@@ -122,10 +122,10 @@ describe("/api/blogs GET tests with MongoDB", () => {
     const response = await api
       .post("/api/blogs")
       .send(newBlog)
-      .expect(400) // Varmistetaan, että statuskoodi on 400
+      .expect(400) 
       .expect("Content-Type", /application\/json/);
   
-    // Varmistetaan, että virheilmoitus sisältää odotetut tiedot
+    
     expect(response.body.error).toBe("url is required");
   });
 

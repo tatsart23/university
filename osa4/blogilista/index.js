@@ -6,7 +6,7 @@ const config = require('./utils/config');
 const logger = require('./utils/logger');
 const blogsRouter = require('./controllers/blogs');
 
-// MongoDB-yhteyden muodostus
+
 mongoose
   .connect(config.MONGODB_URI)
   .then(() => {
@@ -16,7 +16,7 @@ mongoose
     logger.error('error connecting to MongoDB:', error.message);
   });
 
-// Middlewaret
+
 app.use(cors());
 app.use(express.json());
 
@@ -30,5 +30,5 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// Exportataan app supertestiä varten
+
 module.exports = app;
