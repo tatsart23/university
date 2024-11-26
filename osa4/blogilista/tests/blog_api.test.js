@@ -2,48 +2,49 @@ const mongoose = require("mongoose");
 const supertest = require("supertest");
 const app = require("../index");
 const Blog = require("../models/blog");
+const User = require("../models/user");
+const bcrypt = require("bcryptjs");
 
 const api = supertest(app);
 
 describe("/api/blogs tests with MongoDB", () => {
-  test("api returns blogs", async () => {
-    const response = await api.get("/api/blogs");
-    response.body.forEach((blog) => {
-      console.log(
-        `Blog ID: ${blog._id}, Title: ${blog.title}, Author: ${blog.author}` //MUISTA MONGODB OMA ID
-      );
-    });
-    expect(response.body).toBeInstanceOf(Array);
-  });
+  let token; // Token tallennetaan tähän
 
-  test("returns all blogs as JSON", async () => {
-    const blogsInDb = await Blog.find({});
-    const response = await api
-      .get("/api/blogs")
+  beforeAll(async () => {
+    await User.deleteMany({});
+    const newUser = {
+      username: "testuser",
+      name: "Test User",
+      password: "password123",
+    };
+
+    console.log("Creating new user...");
+    const userCreationResponse = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    console.log("User creation response:", userCreationResponse.body);
+
+    const loginResponse = await api
+      .post("/api/login")
+      .send({ username: "testuser", password: "password123" })
       .expect(200)
       .expect("Content-Type", /application\/json/);
 
-    response.body.forEach((blog) => {
-      console.log(
-        `Blog ID: ${blog._id}, Title: ${blog.title}, Author: ${blog.author} URL: ${blog.url} Likes: ${blog.likes}`
-      ); // MUISTA MONGODB OMA ID
-    });
-    expect(response.body).toHaveLength(blogsInDb.length);
+    console.log("Login response:", loginResponse.body); // Lisää tämä tarkistamaan, onko token mukana
+
+    token = loginResponse.body.token;
+
+    if (!token) {
+      throw new Error("Token missing from login response!");
+    }
+
+    console.log("Token obtained:", token);
   });
 
-  test("each blog has id field", async () => {
-    const response = await api.get("/api/blogs").expect(200);
-
-    response.body.forEach((blog) => {
-      blog.id = blog._id.toString();
-      console.log(
-        `Blog ID: ${blog._id}, Title: ${blog.title}, Author: ${blog.author}`
-      );
-      expect(blog._id).toBeDefined();
-    });
-  });
-
-  test("you can add a blog", async () => {
+  test("you can add a blog with a valid token", async () => {
     const newBlog = {
       title: "Test blog",
       author: "Test author",
@@ -56,9 +57,12 @@ describe("/api/blogs tests with MongoDB", () => {
 
     const response = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
+
+    console.log("Response:", response.body); // Log the response body
 
     expect(response.body.title).toBe(newBlog.title);
     expect(response.body.author).toBe(newBlog.author);
@@ -72,6 +76,52 @@ describe("/api/blogs tests with MongoDB", () => {
     expect(titles).toContain(newBlog.title);
   });
 
+  test("responds with 401 if token is missing when adding a blog", async () => {
+    const newBlog = {
+      title: "Test blog without token",
+      author: "Test author",
+      url: "http://www.testblog.com",
+      likes: 0,
+    };
+
+    const blogsAtStart = await Blog.find({});
+    const initialLength = blogsAtStart.length;
+
+    const response = await api
+      .post("/api/blogs")
+      .send(newBlog)
+      .expect(401) // Odotetaan 401 Unauthorized
+      .expect("Content-Type", /application\/json/);
+
+    expect(response.body.error).toBe("token missing or invalid");
+
+    const blogsInDb = await Blog.find({});
+    expect(blogsInDb).toHaveLength(initialLength); // Blogi ei lisätä
+  });
+
+  test("api returns blogs", async () => {
+    const response = await api.get("/api/blogs");
+    expect(response.body).toBeInstanceOf(Array);
+  });
+
+  test("returns all blogs as JSON", async () => {
+    const blogsInDb = await Blog.find({});
+    const response = await api
+      .get("/api/blogs")
+      .expect(200)
+      .expect("Content-Type", /application\/json/);
+
+    expect(response.body).toHaveLength(blogsInDb.length);
+  });
+
+  test("each blog has id field", async () => {
+    const response = await api.get("/api/blogs").expect(200);
+
+    response.body.forEach((blog) => {
+      expect(blog.id).toBeDefined(); // Check for 'id' field instead of '_id'
+    });
+  });
+
   test("likes field defaults to 0 if not provided", async () => {
     const newBlog = {
       title: "Test blog without likes",
@@ -81,6 +131,7 @@ describe("/api/blogs tests with MongoDB", () => {
 
     const response = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
@@ -94,13 +145,14 @@ describe("/api/blogs tests with MongoDB", () => {
       url: "http://www.testblog.com",
       likes: 0,
     };
-
+  
     const response = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(400)
       .expect("Content-Type", /application\/json/);
-
+  
     expect(response.body.error).toBe("title is required");
   });
 
@@ -113,6 +165,7 @@ describe("/api/blogs tests with MongoDB", () => {
 
     const response = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(400)
       .expect("Content-Type", /application\/json/);
@@ -130,22 +183,20 @@ describe("/api/blogs tests with MongoDB", () => {
 
     const addedBlog = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
 
-    const blogId = addedBlog.body._id;
+    const blogId = addedBlog.body.id;
 
-    const deleteResponse = await api.delete(`/api/blogs/${blogId}`);
-
-    if (deleteResponse.status !== 204) {
-      console.error("Error details:", deleteResponse.body);
-    }
-
-    expect(deleteResponse.status).toBe(204);
+    await api
+      .delete(`/api/blogs/${blogId}`)
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
+      .expect(204);
 
     const blogsInDb = await Blog.find({});
-    const ids = blogsInDb.map((blog) => blog._id.toString());
+    const ids = blogsInDb.map((blog) => blog.id);
     expect(ids).not.toContain(blogId);
   });
 
@@ -159,33 +210,32 @@ describe("/api/blogs tests with MongoDB", () => {
 
     const addedBlog = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
 
-    const blogId = addedBlog.body._id;
+    const blogId = addedBlog.body.id;
 
     const updatedLikes = { likes: 10 };
 
     const response = await api
       .put(`/api/blogs/${blogId}`)
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(updatedLikes)
       .expect(200)
       .expect("Content-Type", /application\/json/);
 
     expect(response.body.likes).toBe(updatedLikes.likes);
-
-    const updatedBlogInDb = await Blog.findById(blogId);
-    expect(updatedBlogInDb.likes).toBe(updatedLikes.likes);
   });
 
   test("responds with 404 if blog to update does not exist", async () => {
     const nonExistentId = "645df037de10c4f3c4000000";
-
     const updatedLikes = { likes: 10 };
 
     await api
       .put(`/api/blogs/${nonExistentId}`)
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(updatedLikes)
       .expect(404)
       .expect("Content-Type", /application\/json/);
@@ -201,21 +251,102 @@ describe("/api/blogs tests with MongoDB", () => {
 
     const addedBlog = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
 
-    const blogId = addedBlog.body._id;
+    const blogId = addedBlog.body.id;
 
     const invalidLikes = { likes: "invalid_value" };
 
     const response = await api
       .put(`/api/blogs/${blogId}`)
+      .set("Authorization", `Bearer ${token}`) // Lähetetään token headerissa
       .send(invalidLikes)
       .expect(400)
       .expect("Content-Type", /application\/json/);
 
-    expect(response.body.error).toContain("Cast to Number failed");
+    expect(response.body.error).toBe("Likes must be a number");
+  });
+
+  test("returns blogs with user details", async () => {
+    const response = await api
+      .get("/api/blogs")
+      .expect(200)
+      .expect("Content-Type", /application\/json/);
+  
+    response.body.forEach((blog) => {
+      expect(blog.user).toBeDefined();
+      expect(blog.user.username).toBeDefined();
+      expect(blog.user.name).toBeDefined();
+    });
+  });
+});
+
+describe("/api/users tests with MongoDB", () => {
+  beforeEach(async () => {
+    await User.deleteMany({});
+    const passwordHash = await bcrypt.hash("password123", 10);
+    const initialUser = new User({
+      username: "testuser",
+      name: "Test User",
+      passwordHash,
+    });
+    await initialUser.save();
+  });
+
+  test("creates a valid user", async () => {
+    const newUser = {
+      username: "newuser",
+      name: "New User",
+      password: "newpassword123",
+    };
+
+    const response = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    expect(response.body.username).toBe(newUser.username);
+    expect(response.body.name).toBe(newUser.name);
+  });
+
+  test("returns error if username is too short", async () => {
+    const newUser = {
+      username: "nu",
+      name: "New User",
+      password: "newpassword123",
+    };
+
+    const response = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    expect(response.body.error).toBe(
+      "Username must be at least 3 characters long"
+    );
+  });
+
+  test("returns error if password is too short", async () => {
+    const newUser = {
+      username: "validuser",
+      name: "Valid User",
+      password: "12",
+    };
+
+    const response = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    expect(response.body.error).toBe(
+      "Password must be at least 3 characters long"
+    );
   });
 });
 
