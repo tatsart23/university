@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const cors = require("cors");
 const config = require("./utils/config");
 const logger = require("./utils/logger");
 const blogsRouter = require("./controllers/blogs");
@@ -19,9 +20,10 @@ mongoose
   });
 
 app.use(express.json());
-app.use(tokenExtractor); 
+app.use(cors());
+app.use(tokenExtractor);  // Tokenin tarkistus kaikille reiteille
 
-app.use("/api/blogs", blogsRouter);  
+app.use("/api/blogs", blogsRouter);  // Lisää userExtractor tähän
 
 app.use("/api/users", usersRouter);
 app.use("/api/login", loginRouter);

@@ -1,0 +1,23 @@
+# Node.js-projekti
+
+# Node_modules ei kuulu versionhallintaan
+node_modules/
+
+# Lokitiedostot
+logs/
+*.log
+
+# Ympäristömuuttujatiedostot
+.env
+
+# Rakennetut tuotantotiedostot
+dist/
+build/
+
+# IDE-asetukset
+.vscode/
+.idea/
+
+# Käyttöjärjestelmän tilapäistiedostot
+.DS_Store
+Thumbs.db
