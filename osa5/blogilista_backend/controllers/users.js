@@ -21,7 +21,7 @@ userRouter.post('/', async (req, res) => {
     username,
     name,
     passwordHash,
-    blogs: [] // Initialize blogs field as an empty array
+    blogs: [] 
   });
 
   const savedUser = await user.save();
@@ -34,6 +34,18 @@ userRouter.get("/", async (__, response) => {
     response.json(users);
   } catch (error) {
     response.status(400).json({ error: error.message });
+  }
+});
+
+userRouter.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id); // Etsitään käyttäjä ID:n perusteella
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(user); // Palautetaan käyttäjän tiedot
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
