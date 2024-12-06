@@ -32,7 +32,7 @@ module.exports = {
     "react/prop-types": "off",
     "no-unused-vars": "warn",
     "no-console": "warn",
-    "react/jsx-uses-react": "off",
+    "react/jsx-uses-react": "on",
     "react/react-in-jsx-scope": "off",
     "import/no-unresolved": "error",
   },

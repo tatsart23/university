@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types'; // Tuodaan PropTypes
+import { useState } from "react";
+import PropTypes from "prop-types"; // Tuodaan PropTypes
 
 const Blog = ({ blog, handleLike, handleDelete }) => {
   const [showBlogDetails, setShowBlogDetails] = useState(false);
@@ -20,25 +20,30 @@ const Blog = ({ blog, handleLike, handleDelete }) => {
     backgroundColor: 'red',
     marginBottom: 5,
   };
-
+  
   return (
     <div style={blogStyle}>
-      <div>
-        {blog.title}
-        <button onClick={toggleShowBlogDetails}>
-          {showBlogDetails ? 'Hide' : 'View'}
-        </button>
-      </div>
+      {blog.title}
+      <button onClick={toggleShowBlogDetails}>
+        {showBlogDetails ? "Hide" : "View"}
+      </button>
+
       {showBlogDetails && (
         <div>
           <p>Author: {blog.author}</p>
-          <p>User: {blog.user && blog.user.name ? blog.user.name : ''} </p>
+          <p>
+            User: {blog.user && blog.user.name ? blog.user.name : ""}
+            {blog.user && blog.user.username ? ` (${blog.user.username})` : ""}
+          </p>
+
           <p>URL: {blog.url}</p>
           <p>
             Likes: {blog.likes}
             <button onClick={() => handleLike(blog)}>Like</button>
           </p>
-          <button onClick={() => handleDelete(blog)} style={buttonStyle}>Delete</button>
+          <button onClick={() => handleDelete(blog)} style={buttonStyle}>
+            Delete
+          </button>
         </div>
       )}
     </div>
@@ -54,11 +59,13 @@ Blog.propTypes = {
     likes: PropTypes.number.isRequired,
     user: PropTypes.shape({
       name: PropTypes.string,
-      _id: PropTypes.string.isRequired
-    }).isRequired,
+      username: PropTypes.string,
+      _id: PropTypes.string,
+    }),
   }).isRequired,
   handleLike: PropTypes.func.isRequired,
   handleDelete: PropTypes.func.isRequired,
 };
+
 
 export default Blog;

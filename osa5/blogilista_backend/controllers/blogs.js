@@ -50,6 +50,26 @@ blogRouter.post("/", userExtractor, async (req, res) => {
   res.status(201).json(savedBlog);
 });
 
+// GET /api/blogs/:id
+
+blogRouter.get("/:id", async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id).populate("user", {
+      username: 1,
+      name: 1,
+    });
+
+    if (!blog) {
+      return res.status(404).json({ error: "Blog not found" });
+    }
+
+    res.json(blog);
+  } catch (error) {
+    console.error("Error fetching blog:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // DELETE /api/blogs/:id
 blogRouter.delete("/:id", userExtractor, async (req, res) => {
   try {
