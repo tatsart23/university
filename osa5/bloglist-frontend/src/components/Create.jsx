@@ -39,6 +39,7 @@ const Create = ({ onBlogAdded }) => {
           Title
           <input
             type="text"
+            name='title'
             value={title}
             onChange={({ target }) => setTitle(target.value)}
             placeholder="Enter blog title"
@@ -48,6 +49,7 @@ const Create = ({ onBlogAdded }) => {
           Author
           <input
             type="text"
+            name='author'
             value={author}
             onChange={({ target }) => setAuthor(target.value)}
             placeholder="Enter blog author"
@@ -57,18 +59,20 @@ const Create = ({ onBlogAdded }) => {
           URL
           <input
             type="text"
+            name='url'
             value={url}
             onChange={({ target }) => setUrl(target.value)}
             placeholder="Enter blog URL"
           />
         </div>
+        
         <button type="submit">Create</button>
       </form>
     </div>
   );
 };
 
-// Määritellään PropTypet Create-komponentille
+
 Create.propTypes = {
   onBlogAdded: PropTypes.func.isRequired,
 };

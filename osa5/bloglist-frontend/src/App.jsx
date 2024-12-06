@@ -41,7 +41,7 @@ const App = () => {
   const handleBlogAdded = (newBlog) => {
     setBlogs(blogs.concat(newBlog));
     setShowCreateForm(false);
-    setNotification({ message: `A new blog '${newBlog.title}' by ${newBlog.author} added`, type: 'success' });
+    setNotification({ message: `Blog created successfully`, type: 'success' });
     setTimeout(() => setNotification({ message: '', type: '' }), 5000);
   };
 
@@ -85,6 +85,7 @@ const App = () => {
       <Notification message={notification.message} type={notification.type} />
       {isLoggedIn ? (
         <>
+          <h1>Welcome!</h1>
           <h2>Blogs</h2>
           <Logout onLogout={handleLogout} />
           <button onClick={toggleCreateForm}>
